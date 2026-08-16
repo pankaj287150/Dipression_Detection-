@@ -303,6 +303,7 @@ Recall
 F1-Score
 ROC-AUC
 Model Comparison
+```text
 Model	Accuracy	Precision	Recall	F1-Score
 Simple RNN	53.91%	82.65%	10.74%	19.01%
 LSTM	92.05%	91.97%	92.00%	91.99%
@@ -313,6 +314,7 @@ BERT + Random Forest	87.01%	88.86%	84.38%	86.56%
 BERT + SVM	90.59%	90.56%	90.45%	90.50%
 BERT + XGBoost	89.98%	90.07%	89.67%	89.87%
 Final Ensemble	96.59%	96.51%	96.65%	96.56%
+```
 
 The final ensemble achieved approximately 96.59% accuracy on the held-out test data.
 
@@ -321,10 +323,11 @@ The final ensemble achieved approximately 96.59% accuracy on the held-out test d
 The final ensemble achieved approximately:
 
 Dataset Split	ROC-AUC
+```text
 Training	0.9992
 Validation	0.9890
 Testing	0.9881
-
+```
 The relatively close AUC values across the three splits indicate consistent performance and good generalization to unseen text.
 
 ##Key Results
