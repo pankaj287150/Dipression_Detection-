@@ -178,14 +178,15 @@ BERT achieved the strongest individual performance among the evaluated models, w
 ##Hybrid Models
 
 To explore whether BERT embeddings could work effectively with traditional classifiers, three hybrid approaches were developed:
-
+```text
 BERT
  ↓
 [CLS] Embedding
  ↓
- ┌───────────────┬────────────────┬────────────────┐
+ ┌───────────────┬────────────────┬
  ↓               ↓                ↓
 SVM          Random Forest      XGBoost
+```
 
 The implemented hybrid models are:
 
@@ -229,6 +230,7 @@ Probability <  0.50  →  Non-Depressed
 Weighted soft voting was chosen because it keeps the probability information from each model instead of simply taking a majority vote.
 
 ##Model Architecture
+```text
 
 Traditional Machine Learning
 Text
@@ -277,8 +279,10 @@ BERT Transformer
 Classification Layer
  ↓
 Prediction
+```
 
 ##Final Ensemble
+```text
                    ┌── BERT ──────────────┐
                    │                       │
                    ├── BiLSTM ────────────┤
@@ -287,6 +291,8 @@ Input Text ────────┼── LSTM ──────────
                    └── BERT + XGBoost ────┘
                                            ↓
                                     Final Prediction
+```
+
 #Performance
 
 The models were evaluated using:
@@ -386,7 +392,7 @@ Weighted Soft Voting
 XGBoost
 
 ##Project Structure
-
+```text
 Depression-Detection/
 │
 ├── data/
@@ -417,7 +423,7 @@ Depression-Detection/
 │
 ├── requirements.txt
 └── README.md
-
+```
 ##Applications
 
 This project can be explored for:
