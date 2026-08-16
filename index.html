@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Depression Detection — AI System</title>
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --card:     #22263a;
+      --border:   #2e3250;
+      --accent:   #5b6af0;
+      --accent2:  #7c3aed;
+      --green:    #10b981;
+      --red:      #ef4444;
+      --yellow:   #f59e0b;
+      --text:     #e2e8f0;
+      --muted:    #8892b0;
+      --radius:   14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ─── Header ─── */
+    header {
+      width: 100%;
+      background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    header h1 { font-size: 1.35rem; font-weight: 700; }
+    header p  { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    /* ─── Status pill ─── */
+    #status-bar {
+      width: 100%; max-width: 860px;
+      margin: 22px auto 0;
+      padding: 0 20px;
+    }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); }
+    .dot.online  { background: var(--green); }
+    .dot.offline { background: var(--red);   }
+
+    /* ─── Main card ─── */
+    main {
+      width: 100%; max-width: 860px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.97rem;
+      line-height: 1.6;
+      padding: 14px 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ─── Controls row ─── */
+    .controls {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      flex: 1; min-width: 160px;
+    }
+
+    button#predict-btn {
+      flex: 2;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button#predict-btn:hover  { opacity: 0.9; }
+    button#predict-btn:active { transform: scale(0.98); }
+    button#predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    button#clear-btn {
+      padding: 12px 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    button#clear-btn:hover { border-color: var(--text); color: var(--text); }
+
+    /* ─── Character counter ─── */
+    .char-count {
+      text-align: right;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ─── Result ─── */
+    #result-card {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .result-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    }
+
+    .result-icon {
+      width: 54px; height: 54px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .icon-dep     { background: rgba(239,68,68,0.15); }
+    .icon-not-dep { background: rgba(16,185,129,0.15); }
+
+    .result-label {
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+    .label-dep     { color: var(--red);   }
+    .label-not-dep { color: var(--green); }
+
+    .result-model {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ─── Confidence bar ─── */
+    .conf-section label { text-transform: none; letter-spacing: 0; }
+    .conf-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .conf-bar-wrap {
+      flex: 1; height: 10px;
+      background: var(--card);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .conf-bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.8s ease;
+    }
+    .bar-dep     { background: linear-gradient(90deg, #ef4444, #f97316); }
+    .bar-not-dep { background: linear-gradient(90deg, #10b981, #06b6d4); }
+    .conf-pct { font-weight: 700; font-size: 1rem; min-width: 46px; text-align: right; }
+
+    /* ─── Divider ─── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 18px 0;
+    }
+
+    /* ─── Info grid ─── */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .info-item {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .info-item .info-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .info-item .info-value {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ─── Disclaimer ─── */
+    .disclaimer {
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 18px;
+      line-height: 1.5;
+    }
+
+    /* ─── Loading spinner ─── */
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Models status card ─── */
+    #models-card h3 { font-size: 0.9rem; margin-bottom: 14px; color: var(--muted); }
+    .model-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      margin: 4px;
+    }
+
+    /* ─── Error toast ─── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #ef4444;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 560px) {
+      .info-grid { grid-template-columns: 1fr; }
+      header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">🧠</div>
+  <div>
+    <h1>Depression Detection System</h1>
+    <p>NLP-powered mental health text analysis · BERT + Ensemble ML</p>
+  </div>
+</header>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <span class="status-pill">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-text">Checking API…</span>
+  </span>
+</div>
+
+<main>
+
+  <!-- Input card -->
+  <div class="card">
+    <label for="text-input">Enter text to analyse</label>
+    <textarea
+      id="text-input"
+      placeholder="Paste a social media post, journal entry, or any text here…"
+      maxlength="2000"
+    ></textarea>
+    <div class="char-count"><span id="char-count">0</span> / 2000</div>
+
+    <div class="controls">
+      <select id="model-select">
+        <option value="ensemble">Ensemble (Best)</option>
+        <option value="LR">Logistic Regression</option>
+        <option value="SVM">SVM</option>
+        <option value="RandomForest">Random Forest</option>
+        <option value="BERT">BERT</option>
+      </select>
+
+      <button id="predict-btn" onclick="runPrediction()">
+        <span id="btn-label">Analyse Text</span>
+        <span class="spinner" id="spinner"></span>
+      </button>
+
+      <button id="clear-btn" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="result-card">
+    <div class="result-header">
+      <div class="result-icon" id="result-icon">😐</div>
+      <div>
+        <div class="result-label" id="result-label">—</div>
+        <div class="result-model" id="result-model-name">—</div>
+      </div>
+    </div>
+
+    <div class="conf-section">
+      <label>Confidence Score</label>
+      <div class="conf-row">
+        <div class="conf-bar-wrap">
+          <div class="conf-bar" id="conf-bar" style="width:0%"></div>
+        </div>
+        <span class="conf-pct" id="conf-pct">0%</span>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Prediction Label</div>
+        <div class="info-value" id="info-label">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Model Used</div>
+        <div class="info-value" id="info-model">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Confidence</div>
+        <div class="info-value" id="info-conf">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Risk Level</div>
+        <div class="info-value" id="info-risk">—</div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ This tool is for <strong>research & educational purposes only</strong>. 
+      It is not a clinical diagnostic tool. If you or someone you know is struggling, 
+      please contact a mental health professional or call a helpline.
+    </div>
+  </div>
+
+  <!-- Models status card -->
+  <div class="card" id="models-card">
+    <h3>⚙️ Loaded Models</h3>
+    <div id="models-list"><span style="color:var(--muted);font-size:0.85rem">Loading…</span></div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const API = "http://localhost:5000";
+
+  // ── Character counter ───────────────────────────────────────
+  const ta = document.getElementById("text-input");
+  ta.addEventListener("input", () => {
+    document.getElementById("char-count").textContent = ta.value.length;
+  });
+
+  // ── Check API status on load ────────────────────────────────
+  async function checkStatus() {
+    try {
+      const res  = await fetch(`${API}/models/status`);
+      const data = await res.json();
+      const dot  = document.getElementById("status-dot");
+      const txt  = document.getElementById("status-text");
+
+      if (data.ready) {
+        dot.className = "dot online";
+        txt.textContent = `API online · ${data.loaded.length} models loaded`;
+      } else {
+        dot.className = "dot offline";
+        txt.textContent = "API online but no models loaded";
+      }
+
+      // Populate model chips
+      const list = document.getElementById("models-list");
+      list.innerHTML = data.loaded.map(m =>
+        `<span class="model-chip"><span class="dot online"></span>${m}</span>`
+      ).join("") || "<span style='color:var(--muted)'>No models found</span>";
+
+    } catch {
+      document.getElementById("status-dot").className = "dot offline";
+      document.getElementById("status-text").textContent = "API offline — start app.py";
+    }
+  }
+
+  // ── Main prediction ─────────────────────────────────────────
+  async function runPrediction() {
+    const text  = ta.value.trim();
+    const model = document.getElementById("model-select").value;
+
+    if (!text) { showToast("Please enter some text first."); return; }
+
+    setLoading(true);
+
+    try {
+      const res  = await fetch(`${API}/predict`, {
+        method : "POST",
+        headers: { "Content-Type": "application/json" },
+        body   : JSON.stringify({ text, model })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Prediction failed");
+      }
+
+      const data = await res.json();
+      showResult(data);
+
+    } catch (e) {
+      showToast(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function showResult(data) {
+    const isDep   = data.label === 1;
+    const confPct = Math.round(data.confidence * 100);
+    const risk    = confPct >= 85 ? "High" : confPct >= 60 ? "Moderate" : "Low";
+
+    // Icon & label
+    document.getElementById("result-icon").textContent  = isDep ? "😞" : "😊";
+    document.getElementById("result-icon").className    = `result-icon ${isDep ? "icon-dep" : "icon-not-dep"}`;
+    document.getElementById("result-label").textContent = data.prediction;
+    document.getElementById("result-label").className   = `result-label ${isDep ? "label-dep" : "label-not-dep"}`;
+    document.getElementById("result-model-name").textContent = `via ${data.model_used}`;
+
+    // Confidence bar
+    const bar = document.getElementById("conf-bar");
+    bar.style.width = confPct + "%";
+    bar.className   = `conf-bar ${isDep ? "bar-dep" : "bar-not-dep"}`;
+    document.getElementById("conf-pct").textContent = confPct + "%";
+
+    // Info grid
+    document.getElementById("info-label").textContent = data.prediction;
+    document.getElementById("info-model").textContent = data.model_used;
+    document.getElementById("info-conf").textContent  = (data.confidence * 100).toFixed(1) + "%";
+    document.getElementById("info-risk").textContent  = risk;
+    document.getElementById("info-risk").style.color  =
+      risk === "High" ? "var(--red)" : risk === "Moderate" ? "var(--yellow)" : "var(--green)";
+
+    const card = document.getElementById("result-card");
+    card.style.display = "block";
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function clearAll() {
+    ta.value = "";
+    document.getElementById("char-count").textContent = "0";
+    document.getElementById("result-card").style.display = "none";
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById("predict-btn");
+    document.getElementById("btn-label").style.display  = on ? "none" : "inline";
+    document.getElementById("spinner").style.display    = on ? "inline-block" : "none";
+    btn.disabled = on;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3500);
+  }
+
+  // ── Keyboard shortcut: Ctrl+Enter ───────────────────────────
+  ta.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction();
+  });
+
+  // ── Init ────────────────────────────────────────────────────
+  checkStatus();
+  setInterval(checkStatus, 30000);   // refresh status every 30s
+</script>
+</body>
+</html>
